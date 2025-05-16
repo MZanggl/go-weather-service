@@ -1,0 +1,22 @@
+version: '3.8'
+volumes:
+  pgdata:
+services:
+  postgres:
+    build: ./db
+    container_name: weather_postgres
+    environment:
+      POSTGRES_USER: weather_api
+      POSTGRES_PASSWORD: 12345678
+      POSTGRES_DB: weather
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/wait-for-port.sh:/usr/local/bin/wait-for-port.sh
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/wait-for-port.sh", "localhost:5432", "--", "echo", "ready"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5432:5432"
