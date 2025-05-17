@@ -12,6 +12,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+var BroadcastFunc = socketio.Broadcast
+
 func GetWeatherRecordsForSingleDay(c *fiber.Ctx) error {
 	from := c.Params("from")
 
@@ -66,6 +68,12 @@ func CreateWeatherRecord(c *fiber.Ctx) error {
 		log.Println("Error parsing request body:", err)
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid request")
 	}
+
+	if !utils.IsValidDate(record.RecordedAt) {
+		log.Println("Invalid date format:", record.RecordedAt)
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid Request")
+	}
+
 	fmt.Println("Received record:", record.RecordedAt, record.Humidity, record.Temperature)
 
 	firstRecord, err := services.CreateWeatherRecord(record)
@@ -81,7 +89,7 @@ func CreateWeatherRecord(c *fiber.Ctx) error {
 	}
 
 	fmt.Println("Broadcasting record:", string(firstRecordJson))
-	socketio.Broadcast(firstRecordJson, socketio.TextMessage)
+	BroadcastFunc(firstRecordJson, socketio.TextMessage)
 
 	return c.Status(fiber.StatusCreated).JSON(firstRecord)
 }

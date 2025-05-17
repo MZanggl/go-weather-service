@@ -6,19 +6,20 @@ import (
 	"weatherapi/configs"
 	"weatherapi/models"
 	"weatherapi/server"
+	"weatherapi/utils"
 
 	"gorm.io/gorm"
 )
 
 type WeatherRecordBody struct {
 	RecordedAt  string  `json:"date"`
-	Humidity    float32 `json:"humidity"`
-	Temperature float32 `json:"temperature"`
+	Humidity    float64 `json:"humidity"`
+	Temperature float64 `json:"temperature"`
 }
 
 type rawRecord struct {
-	Humidity    float32 `json:"humidity"`
-	Temperature float32 `json:"temperature"`
+	Humidity    float64 `json:"humidity"`
+	Temperature float64 `json:"temperature"`
 }
 type formattedRecord struct {
 	Humidity    string `json:"humidity"`
@@ -44,8 +45,8 @@ func getFormattedRecords(weatherRecords *[]models.Weather, columnsConfig *config
 				Temperature: record.Temperature,
 			},
 			Formatted: formattedRecord{
-				Humidity:    fmt.Sprintf("%.2f", record.Humidity) + columnsConfig.HumidityFormat,
-				Temperature: fmt.Sprintf("%.2f", record.Temperature) + columnsConfig.TemperatureFormat,
+				Humidity:    utils.FormatFloat(record.Humidity, columnsConfig.HumidityFormat),
+				Temperature: utils.FormatFloat(record.Temperature, columnsConfig.TemperatureFormat),
 			},
 		})
 	}
@@ -96,8 +97,5 @@ func CreateWeatherRecord(record *WeatherRecordBody) (RecordResponse, error) {
 		return nil
 	})
 
-	if err != nil {
-		return RecordResponse{}, err
-	}
-	return result, nil
+	return result, err
 }

@@ -53,7 +53,6 @@ func GetColumns() *ColumnsConfig {
 		if err := yaml.Unmarshal(columnsYaml, &rawColumnsConfig); err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Println("Columns config loaded successfully", rawColumnsConfig)
 		dateFormat := dateFormats[rawColumnsConfig.Columns["Date"].Unit]
 		if dateFormat == "" {
 			log.Fatalln("invalid date format specified in columns.yaml")
@@ -70,9 +69,15 @@ func GetColumns() *ColumnsConfig {
 
 func Get() *Config {
 	onceConfigs.Do(func() {
-		err := godotenv.Load()
+		appEnv := os.Getenv("APP_ENV")
+		if appEnv == "" {
+			log.Fatalln("APP_ENV environment variable is not set")
+		}
+
+		envFilename := fmt.Sprintf("./configs/.env.%s", appEnv)
+		err := godotenv.Load(envFilename)
 		if err != nil {
-			log.Println("No .env file found. Using system environment variables")
+			log.Printf("No %s file found. Using system environment variables\n", envFilename)
 		}
 
 		conf = &Config{
