@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gofiber/contrib/socketio"
 	"github.com/gofiber/contrib/websocket"
@@ -10,7 +11,7 @@ import (
 
 func RegisterWebSocket(app *fiber.App) {
 	app.Use("/ws", func(c *fiber.Ctx) error {
-		fmt.Print("WebSocket upgrade request")
+		log.Println("WebSocket upgrade request")
 		if websocket.IsWebSocketUpgrade(c) {
 			c.Locals("allowed", true)
 			return c.Next()
@@ -19,15 +20,15 @@ func RegisterWebSocket(app *fiber.App) {
 	})
 
 	socketio.On(socketio.EventDisconnect, func(ep *socketio.EventPayload) {
-		fmt.Printf("Disconnection event - User: %s", ep.Kws.GetStringAttribute("user_id"))
+		log.Printf("Disconnection event - User: %s", ep.Kws.GetStringAttribute("user_id"))
 	})
 
 	socketio.On(socketio.EventClose, func(ep *socketio.EventPayload) {
-		fmt.Printf("Close event - User: %s", ep.Kws.GetStringAttribute("user_id"))
+		log.Printf("Close event - User: %s", ep.Kws.GetStringAttribute("user_id"))
 	})
 
 	socketio.On(socketio.EventError, func(ep *socketio.EventPayload) {
-		fmt.Printf("Error event - User: %s", ep.Kws.GetStringAttribute("user_id"))
+		log.Printf("Error event - User: %s", ep.Kws.GetStringAttribute("user_id"))
 	})
 
 	app.Get("/ws/:id", socketio.New(func(kws *socketio.Websocket) {

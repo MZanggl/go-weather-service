@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"weatherapi/configs"
 	"weatherapi/services"
@@ -12,12 +11,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// abstracted to make it mockable in tests
 var BroadcastFunc = socketio.Broadcast
 
 func GetWeatherRecordsForSingleDay(c *fiber.Ctx) error {
 	from := c.Params("from")
-
-	fmt.Println("Received request for singleweather data for single day", from)
 
 	if !utils.IsValidDate(from) {
 		log.Println("Invalid 'from' date format:", from)
@@ -35,8 +33,6 @@ func GetWeatherRecordsForSingleDay(c *fiber.Ctx) error {
 func GetWeatherRecordsForRange(c *fiber.Ctx) error {
 	from := c.Params("from")
 	to := c.Params("to")
-
-	fmt.Println("Received request for weather data from", from, "to", to)
 
 	if !utils.IsValidDate(from) {
 		log.Println("Invalid 'from' date format:", from)
@@ -79,7 +75,7 @@ func CreateWeatherRecord(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid Request")
 	}
 
-	fmt.Println("Received record:", record.RecordedAt, record.Humidity, record.Temperature)
+	log.Println("Received request to create:", record)
 
 	// verify record is not already in the database
 	results, err := services.GetWeatherRecordsForSingleDay(record.RecordedAt)
@@ -104,7 +100,7 @@ func CreateWeatherRecord(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("Internal server error")
 	}
 
-	fmt.Println("Broadcasting record:", string(firstRecordJson))
+	log.Println("Broadcasting record:", string(firstRecordJson))
 	BroadcastFunc(firstRecordJson, socketio.TextMessage)
 
 	return c.Status(fiber.StatusCreated).JSON(firstRecord)

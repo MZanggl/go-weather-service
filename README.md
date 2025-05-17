@@ -1,4 +1,6 @@
-# Weather API
+# Weather API 🌞
+
+<img src="https://mermaid.ink/svg/pako:eNptU1tv2jAU_ivWeeokaLisAfxQaUDXddJW1lBVmngxziH1IHZ27KjtEP99DiZFhPohir_LOedz4i1IkyJwsPi3RC1xqkRGIl9o5lchyCmpCqEde7RI5-idztA6ZXQiSRWOCcumwokjzgJx7vwyu6vUTyjcM9J-e3Froq9qifTpXD4d17WXwiK7mBnrMkL7gfQJl4mRa3STjULtQpcDxAIWTOHZkLevr_0snE2M1ii9Mqiq-J5q5OXsodRM1WCkdIqvl_kfG0wNdV16dp_MWfQSkgelxz07HXPv8Z0cO7CMUBpKg2g6btclklJKtDa6ITInJRppOBuTEakU1h1VH-X4Np_PTqtGyVoVVfyTA9h3v705zh_xFZmcGWogEXemme1XifTWiGbPsj2gK0mf0oexqyE4-57c__S0LYw_q2o-aEFGKgXuqMQW5Ei5qLawrdwL8O1yXAD3r6mg9QIWeuc9_m_5bUxe28iU2TPwldhYvyuLVLj6OryjhP4L08SU2gHvx919EeBbeAXe7lx2qtUbXcWjQdyNO8PuoPd5eNWCN-A12R8MOvGoO-qPenGvO9y14N9-Bl1uNi3AVDlDP8KdlEavVAa7_xyFMCM">
 
 ## Prerequisites
 
@@ -88,20 +90,19 @@ http://127.0.0.1:8090/weather/2025-01-01/2025-01-02
 
 ## WebSocket Usage
 
-- Connect to:
+Connect to:
   ```
   ws://127.0.0.1:8090/ws/<some user id>
   ```
-- As records are added, you will be notified on this channel.
-- You can connect from multiple clients.
+As records are added, you will be notified on this channel (you can connect from multiple clients).
 
-The simplest websocket client is this CLI that you can run in your terminal:
+The simplest websocket client is [wscat](https://github.com/websockets/wscat) that you can run from your terminal:
 
 ```bash
 npx wscat -c  ws://127.0.0.1:8090/ws/<some user id>
 ```
 
-When using Postman, create a new WebSocket request (not Socket.IO).
+When using Postman, make sure to create a WebSocket request, not a Socket.IO request.
 
 ---
 
@@ -116,10 +117,41 @@ APP_ENV=test go test ./...
 
 ---
 
+## Folder Structure
+
+```
+.
+├── api/
+│   ├── configs/         # Configuration files and environment variable loaders
+│   ├── handlers/        # HTTP route handlers
+│   ├── models/          # Database models
+│   ├── server/          # Server setup (DB, websocket, etc.)
+│   ├── services/        # Business logic and data access
+│   ├── utils/           # Utility functions (date, number formatting, etc.)
+│   ├── main.go          # Application entry point
+│   ├── main_test.go     # Main API tests
+│   ├── go.mod           # Go module definition
+│   └── go.sum           # Go module checksums
+├── db/
+│   ├── Dockerfile       # Database Dockerfile
+│   └── seed.sql         # SQL for initial schema and seed data
+├── data/
+│   └── weather.dat      # Weather data for ingestion
+├── ingestion/
+│   └── index.mjs        # Node.js script for data ingestion
+├── scripts/
+│   └── wait-for-port.sh # Helper script for Docker healthcheck
+├── docker-compose.yml   # Docker Compose setup for services
+```
+
+---
+
 ## Tools & Resources
 
-- [Fiber](https://docs.gofiber.io/)
-- [GORM](https://gorm.io/)
+- [Golang](https://go.dev/)
+- [Node.js](https://nodejs.org/en)
+- [Fiber Framework](https://docs.gofiber.io/)
+- [gorm ORM](https://gorm.io/)
 - [Postman](https://www.postman.com/downloads/)
 - [Docker](https://www.docker.com/)
 - [Postgres](https://www.postgresql.org/)
