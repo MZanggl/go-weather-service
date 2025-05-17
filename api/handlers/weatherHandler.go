@@ -54,7 +54,7 @@ func GetWeatherRecordsForRange(c *fiber.Ctx) error {
 }
 
 func CreateWeatherRecord(c *fiber.Ctx) error {
-	conf := configs.Load()
+	conf := configs.Get()
 	if c.Get("X-Api-Token") != conf.ApiToken {
 		log.Println("Invalid or missing API token")
 		return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")

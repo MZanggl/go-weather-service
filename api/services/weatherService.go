@@ -1,12 +1,13 @@
 package services
 
 import (
-	"errors"
 	"fmt"
 	"time"
 	"weatherapi/configs"
 	"weatherapi/models"
 	"weatherapi/server"
+
+	"gorm.io/gorm"
 )
 
 type WeatherRecordBody struct {
@@ -30,27 +31,21 @@ type RecordResponse struct {
 }
 
 func getFormattedRecords(weatherRecords *[]models.Weather, columnsConfig *configs.ColumnsConfig) ([]RecordResponse, error) {
-	var dateFormats = map[string]string{
-		"YYYY-MM-DD": "2006-01-02",
-	}
-
-	dateFormat := dateFormats[columnsConfig.Columns["Date"].Unit]
-	if dateFormat == "" {
-		return nil, errors.New("invalid date format")
-	}
-
 	var results []RecordResponse
 	for _, record := range *weatherRecords {
-		dateFormatted, _ := time.Parse(time.RFC3339, record.RecordedAt)
+		dateFormatted, err := time.Parse(columnsConfig.DateFormat, record.RecordedAt)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing date: %v", err)
+		}
 		results = append(results, RecordResponse{
-			Date: dateFormatted.Format(dateFormat),
+			Date: dateFormatted.Format(columnsConfig.DateFormat),
 			Raw: rawRecord{
 				Humidity:    record.Humidity,
 				Temperature: record.Temperature,
 			},
 			Formatted: formattedRecord{
-				Humidity:    fmt.Sprintf("%.2f", record.Humidity) + columnsConfig.Columns["Humidity"].Unit,
-				Temperature: fmt.Sprintf("%.2f", record.Temperature) + columnsConfig.Columns["Temperature"].Unit,
+				Humidity:    fmt.Sprintf("%.2f", record.Humidity) + columnsConfig.HumidityFormat,
+				Temperature: fmt.Sprintf("%.2f", record.Temperature) + columnsConfig.TemperatureFormat,
 			},
 		})
 	}
@@ -81,14 +76,28 @@ func CreateWeatherRecord(record *WeatherRecordBody) (RecordResponse, error) {
 	db := server.GetDb()
 	columnsConfig := configs.GetColumns()
 
-	weatherRecord := models.Weather{RecordedAt: record.RecordedAt, Humidity: record.Humidity, Temperature: record.Temperature}
-	if err := db.Create(&weatherRecord).Error; err != nil {
-		return RecordResponse{}, err
-	}
+	var result RecordResponse
 
-	results, err := getFormattedRecords(&[]models.Weather{weatherRecord}, columnsConfig)
+	err := db.Transaction(func(tx *gorm.DB) error {
+		weatherRecord := models.Weather{
+			RecordedAt:  record.RecordedAt,
+			Humidity:    record.Humidity,
+			Temperature: record.Temperature,
+		}
+		if err := tx.Create(&weatherRecord).Error; err != nil {
+			return fmt.Errorf("error creating record: %v", err)
+		}
+
+		results, err := getFormattedRecords(&[]models.Weather{weatherRecord}, columnsConfig)
+		if err != nil {
+			return fmt.Errorf("error formatting results: %v", err)
+		}
+		result = results[0]
+		return nil
+	})
+
 	if err != nil {
 		return RecordResponse{}, err
 	}
-	return results[0], nil
+	return result, nil
 }

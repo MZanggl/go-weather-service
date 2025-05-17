@@ -17,11 +17,17 @@ type Config struct {
 	DbConnectionString string
 }
 
-type ColumnsConfig struct {
+type RawColumnsConfig struct {
 	Columns map[string]struct {
 		Description string `yaml:"description"`
 		Unit        string `yaml:"unit"`
 	} `yaml:"columns"`
+}
+
+type ColumnsConfig struct {
+	DateFormat        string
+	HumidityFormat    string
+	TemperatureFormat string
 }
 
 var (
@@ -31,22 +37,38 @@ var (
 	columnsConfig *ColumnsConfig
 )
 
+var dateFormats = map[string]string{
+	"YYYY-MM-DD": "2006-01-02",
+}
+
 func GetColumns() *ColumnsConfig {
 	onceColumns.Do(func() {
 		columnsYaml, err := os.ReadFile("configs/columns.yaml")
 		if err != nil {
 			log.Fatalln(err)
 		}
-		columnsConfig = &ColumnsConfig{}
-		if err := yaml.Unmarshal(columnsYaml, columnsConfig); err != nil {
+
+		var rawColumnsConfig = RawColumnsConfig{}
+
+		if err := yaml.Unmarshal(columnsYaml, &rawColumnsConfig); err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Println("Columns config loaded successfully", columnsConfig)
+		fmt.Println("Columns config loaded successfully", rawColumnsConfig)
+		dateFormat := dateFormats[rawColumnsConfig.Columns["Date"].Unit]
+		if dateFormat == "" {
+			log.Fatalln("invalid date format specified in columns.yaml")
+		}
+
+		columnsConfig = &ColumnsConfig{
+			DateFormat:        dateFormat,
+			HumidityFormat:    rawColumnsConfig.Columns["Humidity"].Unit,
+			TemperatureFormat: rawColumnsConfig.Columns["Temperature"].Unit,
+		}
 	})
 	return columnsConfig
 }
 
-func Load() *Config {
+func Get() *Config {
 	onceConfigs.Do(func() {
 		err := godotenv.Load()
 		if err != nil {
@@ -76,6 +98,6 @@ func Load() *Config {
 
 func init() {
 	// Load the configuration once during startup
-	Load()
+	Get()
 	GetColumns()
 }

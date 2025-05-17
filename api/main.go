@@ -20,7 +20,7 @@ func main() {
 	app.Get("/weather/:from/:to", handlers.GetWeatherRecordsForRange)
 	app.Post("/weather", handlers.CreateWeatherRecord)
 
-	conf := configs.Load()
+	conf := configs.Get()
 	fmt.Println("Starting server at", conf.AppHost)
 	log.Fatal(app.Listen(conf.AppHost))
 }

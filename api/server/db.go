@@ -16,7 +16,7 @@ var (
 
 func GetDb() *gorm.DB {
 	dbOnce.Do(func() {
-		conf := configs.Load()
+		conf := configs.Get()
 		var err error
 		dbInstance, err = gorm.Open(postgres.Open(conf.DbConnectionString), &gorm.Config{})
 		if err != nil {
