@@ -25,20 +25,20 @@ type FormattedWeatherRecordUnits struct {
 	Humidity    string `json:"humidity"`
 	Temperature string `json:"temperature"`
 }
-type RecordResponse struct {
+type WeatherRecordResponse struct {
 	Date      string                      `json:"date"`
 	Raw       RawWeatherRecordUnits       `json:"raw"`
 	Formatted FormattedWeatherRecordUnits `json:"formatted"`
 }
 
-func getFormattedWeatherRecordUnitss(weatherRecords *[]models.Weather, columnsConfig *configs.ColumnsConfig) ([]RecordResponse, error) {
-	var results []RecordResponse
+func getFormattedWeatherRecordUnitss(weatherRecords *[]models.Weather, columnsConfig *configs.ColumnsConfig) ([]WeatherRecordResponse, error) {
+	var results []WeatherRecordResponse
 	for _, record := range *weatherRecords {
-		dateFormatted, err := time.Parse(columnsConfig.DateFormat, record.RecordedAt)
+		dateFormatted, err := time.Parse(time.RFC3339, record.RecordedAt)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing date: %v", err)
 		}
-		results = append(results, RecordResponse{
+		results = append(results, WeatherRecordResponse{
 			Date: dateFormatted.Format(columnsConfig.DateFormat),
 			Raw: RawWeatherRecordUnits{
 				Humidity:    record.Humidity,
@@ -53,7 +53,7 @@ func getFormattedWeatherRecordUnitss(weatherRecords *[]models.Weather, columnsCo
 	return results, nil
 }
 
-func GetWeatherRecordsForSingleDay(from string) ([]RecordResponse, error) {
+func GetWeatherRecordsForSingleDay(from string) ([]WeatherRecordResponse, error) {
 	db := server.GetDb()
 	columnsConfig := configs.GetColumns()
 
@@ -63,7 +63,7 @@ func GetWeatherRecordsForSingleDay(from string) ([]RecordResponse, error) {
 	return getFormattedWeatherRecordUnitss(weatherRecords, columnsConfig)
 }
 
-func GetWeatherRecordsForRange(from string, to string) ([]RecordResponse, error) {
+func GetWeatherRecordsForRange(from string, to string) ([]WeatherRecordResponse, error) {
 	db := server.GetDb()
 	columnsConfig := configs.GetColumns()
 
@@ -73,11 +73,11 @@ func GetWeatherRecordsForRange(from string, to string) ([]RecordResponse, error)
 	return getFormattedWeatherRecordUnitss(weatherRecords, columnsConfig)
 }
 
-func CreateWeatherRecord(record *WeatherRecordBody) (RecordResponse, error) {
+func CreateWeatherRecord(record *WeatherRecordBody) (WeatherRecordResponse, error) {
 	db := server.GetDb()
 	columnsConfig := configs.GetColumns()
 
-	var result RecordResponse
+	var result WeatherRecordResponse
 
 	err := db.Transaction(func(tx *gorm.DB) error {
 		weatherRecord := models.Weather{

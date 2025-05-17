@@ -22,7 +22,7 @@ func GetDb() *gorm.DB {
 		var err error
 
 		var dialector gorm.Dialector
-		if strings.HasPrefix(conf.DbConnectionString, "postgres://") {
+		if strings.HasPrefix(conf.DbConnectionString, "postgresql://") {
 			dialector = postgres.Open(conf.DbConnectionString)
 		} else if strings.HasPrefix(conf.DbConnectionString, "sqlite://") {
 			sqliteConnection, _ := strings.CutPrefix(conf.DbConnectionString, "sqlite://")

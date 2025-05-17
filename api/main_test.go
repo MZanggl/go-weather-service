@@ -105,11 +105,11 @@ func TestCreateWeatherRoute(t *testing.T) {
 		assert.Equal(t, 201, res.StatusCode)
 		body, _ := io.ReadAll(res.Body)
 
-		var actual services.RecordResponse
+		var actual services.WeatherRecordResponse
 		err = json.Unmarshal(body, &actual)
 		assert.Nil(t, err)
 
-		expected := services.RecordResponse{Date: "2024-06-01", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}}
+		expected := services.WeatherRecordResponse{Date: "2024-06-01", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}}
 		assert.Equal(t, expected, actual)
 
 		// Validate record exists in the database
@@ -122,7 +122,7 @@ func TestCreateWeatherRoute(t *testing.T) {
 		assert.Equal(t, "2024-06-01", weatherRecords[0].RecordedAt)
 
 		// validate websocket message
-		var actualWebsocketEvent services.RecordResponse
+		var actualWebsocketEvent services.WeatherRecordResponse
 		err = json.Unmarshal([]byte(websocketEvent), &actualWebsocketEvent)
 		assert.Nil(t, err)
 		assert.Equal(t, expected, actualWebsocketEvent)
@@ -162,11 +162,11 @@ func TestGetWeatherRecordForSingleDayRoute(t *testing.T) {
 		assert.Equal(t, 200, res.StatusCode)
 		body, _ := io.ReadAll(res.Body)
 
-		var actual []services.RecordResponse
+		var actual []services.WeatherRecordResponse
 		err = json.Unmarshal(body, &actual)
 		assert.Nil(t, err)
 
-		expected := []services.RecordResponse{
+		expected := []services.WeatherRecordResponse{
 			{Date: "2025-01-01", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}},
 		}
 		assert.Equal(t, expected, actual)
@@ -209,11 +209,11 @@ func TestGetWeatherRecordForRangeRoute(t *testing.T) {
 		assert.Equal(t, 200, res.StatusCode)
 		body, _ := io.ReadAll(res.Body)
 
-		var actual []services.RecordResponse
+		var actual []services.WeatherRecordResponse
 		err = json.Unmarshal(body, &actual)
 		assert.Nil(t, err)
 
-		expected := []services.RecordResponse{
+		expected := []services.WeatherRecordResponse{
 			{Date: "2025-01-01", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}},
 			{Date: "2025-01-02", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}},
 			{Date: "2025-01-03", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}},

@@ -37,6 +37,10 @@ for (const record of weatherRecords) {
       body: JSON.stringify(record),
     });
 
+    if (response.status === 409) {
+      console.log("🌧️ Duplicate record, skipping:", record.date);
+      continue;
+    }
     if (!response.ok) {
       throw new Error(`Network error! status: ${response.status}`);
     }

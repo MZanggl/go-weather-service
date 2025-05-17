@@ -74,7 +74,23 @@ func CreateWeatherRecord(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid Request")
 	}
 
+	if utils.IsDateInFuture(record.RecordedAt) {
+		log.Println("Date is in the future:", record.RecordedAt)
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid Request")
+	}
+
 	fmt.Println("Received record:", record.RecordedAt, record.Humidity, record.Temperature)
+
+	// verify record is not already in the database
+	results, err := services.GetWeatherRecordsForSingleDay(record.RecordedAt)
+	if err != nil {
+		log.Println("Error getting weather records:", err)
+		return c.Status(fiber.StatusInternalServerError).SendString("Internal server error")
+	}
+	if len(results) > 0 {
+		log.Println("Record already exists for date:", record.RecordedAt)
+		return c.Status(fiber.StatusConflict).SendString("Record already exists for date")
+	}
 
 	firstRecord, err := services.CreateWeatherRecord(record)
 	if err != nil {
