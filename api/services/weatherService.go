@@ -17,21 +17,21 @@ type WeatherRecordBody struct {
 	Temperature float64 `json:"temperature"`
 }
 
-type rawRecord struct {
+type RawWeatherRecordUnits struct {
 	Humidity    float64 `json:"humidity"`
 	Temperature float64 `json:"temperature"`
 }
-type formattedRecord struct {
+type FormattedWeatherRecordUnits struct {
 	Humidity    string `json:"humidity"`
 	Temperature string `json:"temperature"`
 }
 type RecordResponse struct {
-	Date      string          `json:"date"`
-	Raw       rawRecord       `json:"raw"`
-	Formatted formattedRecord `json:"formatted"`
+	Date      string                      `json:"date"`
+	Raw       RawWeatherRecordUnits       `json:"raw"`
+	Formatted FormattedWeatherRecordUnits `json:"formatted"`
 }
 
-func getFormattedRecords(weatherRecords *[]models.Weather, columnsConfig *configs.ColumnsConfig) ([]RecordResponse, error) {
+func getFormattedWeatherRecordUnitss(weatherRecords *[]models.Weather, columnsConfig *configs.ColumnsConfig) ([]RecordResponse, error) {
 	var results []RecordResponse
 	for _, record := range *weatherRecords {
 		dateFormatted, err := time.Parse(columnsConfig.DateFormat, record.RecordedAt)
@@ -40,11 +40,11 @@ func getFormattedRecords(weatherRecords *[]models.Weather, columnsConfig *config
 		}
 		results = append(results, RecordResponse{
 			Date: dateFormatted.Format(columnsConfig.DateFormat),
-			Raw: rawRecord{
+			Raw: RawWeatherRecordUnits{
 				Humidity:    record.Humidity,
 				Temperature: record.Temperature,
 			},
-			Formatted: formattedRecord{
+			Formatted: FormattedWeatherRecordUnits{
 				Humidity:    utils.FormatFloat(record.Humidity, columnsConfig.HumidityFormat),
 				Temperature: utils.FormatFloat(record.Temperature, columnsConfig.TemperatureFormat),
 			},
@@ -60,7 +60,7 @@ func GetWeatherRecordsForSingleDay(from string) ([]RecordResponse, error) {
 	var weatherRecords *[]models.Weather
 	db.Where("recorded_at = ?", from).Find(&weatherRecords)
 
-	return getFormattedRecords(weatherRecords, columnsConfig)
+	return getFormattedWeatherRecordUnitss(weatherRecords, columnsConfig)
 }
 
 func GetWeatherRecordsForRange(from string, to string) ([]RecordResponse, error) {
@@ -70,7 +70,7 @@ func GetWeatherRecordsForRange(from string, to string) ([]RecordResponse, error)
 	var weatherRecords *[]models.Weather
 	db.Where("recorded_at >= ?", from).Where("recorded_at <= ?", to).Find(&weatherRecords)
 
-	return getFormattedRecords(weatherRecords, columnsConfig)
+	return getFormattedWeatherRecordUnitss(weatherRecords, columnsConfig)
 }
 
 func CreateWeatherRecord(record *WeatherRecordBody) (RecordResponse, error) {
@@ -89,7 +89,7 @@ func CreateWeatherRecord(record *WeatherRecordBody) (RecordResponse, error) {
 			return fmt.Errorf("error creating record: %v", err)
 		}
 
-		results, err := getFormattedRecords(&[]models.Weather{weatherRecord}, columnsConfig)
+		results, err := getFormattedWeatherRecordUnitss(&[]models.Weather{weatherRecord}, columnsConfig)
 		if err != nil {
 			return fmt.Errorf("error formatting results: %v", err)
 		}

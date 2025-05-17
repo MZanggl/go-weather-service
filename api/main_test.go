@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"strings"
@@ -8,6 +9,7 @@ import (
 	"weatherapi/handlers"
 	"weatherapi/models"
 	"weatherapi/server"
+	"weatherapi/services"
 
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
@@ -86,9 +88,9 @@ func TestCreateWeatherRoute(t *testing.T) {
 
 		// mock socketio.Broadcast
 		original := handlers.BroadcastFunc
-		websocketEvent := ""
+		websocketEvent := []byte{}
 		handlers.BroadcastFunc = func(event []byte, mType ...int) {
-			websocketEvent = string(event)
+			websocketEvent = event
 		}
 		defer func() { handlers.BroadcastFunc = original }()
 
@@ -103,8 +105,12 @@ func TestCreateWeatherRoute(t *testing.T) {
 		assert.Equal(t, 201, res.StatusCode)
 		body, _ := io.ReadAll(res.Body)
 
-		expected := `{"date":"2024-06-01","raw":{"humidity":60.98765,"temperature":25.98765},"formatted":{"humidity":"60.99%","temperature":"25.99°C"}}`
-		assert.Equal(t, expected, string(body))
+		var actual services.RecordResponse
+		err = json.Unmarshal(body, &actual)
+		assert.Nil(t, err)
+
+		expected := services.RecordResponse{Date: "2024-06-01", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}}
+		assert.Equal(t, expected, actual)
 
 		// Validate record exists in the database
 		var weatherRecords []models.Weather
@@ -116,7 +122,10 @@ func TestCreateWeatherRoute(t *testing.T) {
 		assert.Equal(t, "2024-06-01", weatherRecords[0].RecordedAt)
 
 		// validate websocket message
-		assert.Equal(t, expected, websocketEvent)
+		var actualWebsocketEvent services.RecordResponse
+		err = json.Unmarshal([]byte(websocketEvent), &actualWebsocketEvent)
+		assert.Nil(t, err)
+		assert.Equal(t, expected, actualWebsocketEvent)
 	})
 }
 
@@ -141,16 +150,8 @@ func TestGetWeatherRecordForSingleDayRoute(t *testing.T) {
 	t.Run("returns all records for the given day", func(t *testing.T) {
 		db := prepareTestDB()
 
-		db.Create(&models.Weather{
-			RecordedAt:  "2025-01-01",
-			Humidity:    60.98765,
-			Temperature: 25.98765,
-		})
-		db.Create(&models.Weather{
-			RecordedAt:  "2025-01-02",
-			Humidity:    60.98765,
-			Temperature: 25.98765,
-		})
+		db.Create(&models.Weather{RecordedAt: "2025-01-01", Humidity: 60.98765, Temperature: 25.98765})
+		db.Create(&models.Weather{RecordedAt: "2025-01-02", Humidity: 60.98765, Temperature: 25.98765})
 
 		req, _ := http.NewRequest("GET", "/weather/2025-01-01", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -161,8 +162,14 @@ func TestGetWeatherRecordForSingleDayRoute(t *testing.T) {
 		assert.Equal(t, 200, res.StatusCode)
 		body, _ := io.ReadAll(res.Body)
 
-		expected := `[{"date":"2025-01-01","raw":{"humidity":60.98765,"temperature":25.98765},"formatted":{"humidity":"60.99%","temperature":"25.99°C"}}]`
-		assert.Equal(t, expected, string(body))
+		var actual []services.RecordResponse
+		err = json.Unmarshal(body, &actual)
+		assert.Nil(t, err)
+
+		expected := []services.RecordResponse{
+			{Date: "2025-01-01", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}},
+		}
+		assert.Equal(t, expected, actual)
 	})
 }
 
@@ -187,26 +194,11 @@ func TestGetWeatherRecordForRangeRoute(t *testing.T) {
 	t.Run("returns all records for the given day", func(t *testing.T) {
 		db := prepareTestDB()
 
-		db.Create(&models.Weather{
-			RecordedAt:  "2025-01-01",
-			Humidity:    60.98765,
-			Temperature: 25.98765,
-		})
-		db.Create(&models.Weather{
-			RecordedAt:  "2025-01-02",
-			Humidity:    60.98765,
-			Temperature: 25.98765,
-		})
-		db.Create(&models.Weather{
-			RecordedAt:  "2025-01-03",
-			Humidity:    60.98765,
-			Temperature: 25.98765,
-		})
-		db.Create(&models.Weather{
-			RecordedAt:  "2025-01-04",
-			Humidity:    60.98765,
-			Temperature: 25.98765,
-		})
+		db.Create(&models.Weather{RecordedAt: "2025-01-01", Humidity: 60.98765, Temperature: 25.98765})
+		db.Create(&models.Weather{RecordedAt: "2025-01-02", Humidity: 60.98765, Temperature: 25.98765})
+		db.Create(&models.Weather{RecordedAt: "2025-01-03", Humidity: 60.98765, Temperature: 25.98765})
+		// won't be included
+		db.Create(&models.Weather{RecordedAt: "2025-01-04", Humidity: 60.98765, Temperature: 25.98765})
 
 		req, _ := http.NewRequest("GET", "/weather/2025-01-01/2025-01-03", nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -217,7 +209,15 @@ func TestGetWeatherRecordForRangeRoute(t *testing.T) {
 		assert.Equal(t, 200, res.StatusCode)
 		body, _ := io.ReadAll(res.Body)
 
-		expected := `[{"date":"2025-01-01","raw":{"humidity":60.98765,"temperature":25.98765},"formatted":{"humidity":"60.99%","temperature":"25.99°C"}},{"date":"2025-01-02","raw":{"humidity":60.98765,"temperature":25.98765},"formatted":{"humidity":"60.99%","temperature":"25.99°C"}},{"date":"2025-01-03","raw":{"humidity":60.98765,"temperature":25.98765},"formatted":{"humidity":"60.99%","temperature":"25.99°C"}}]`
-		assert.Equal(t, expected, string(body))
+		var actual []services.RecordResponse
+		err = json.Unmarshal(body, &actual)
+		assert.Nil(t, err)
+
+		expected := []services.RecordResponse{
+			{Date: "2025-01-01", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}},
+			{Date: "2025-01-02", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}},
+			{Date: "2025-01-03", Raw: services.RawWeatherRecordUnits{Humidity: 60.98765, Temperature: 25.98765}, Formatted: services.FormattedWeatherRecordUnits{Humidity: "60.99%", Temperature: "25.99°C"}},
+		}
+		assert.Equal(t, expected, actual)
 	})
 }
