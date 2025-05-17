@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strings"
 	"time"
 	"weatherapi/configs"
 	"weatherapi/models"
@@ -31,10 +32,15 @@ type WeatherRecordResponse struct {
 	Formatted FormattedWeatherRecordUnits `json:"formatted"`
 }
 
-func getFormattedWeatherRecordUnitss(weatherRecords *[]models.Weather, columnsConfig *configs.ColumnsConfig) ([]WeatherRecordResponse, error) {
+func getFormattedWeatherRecordUnits(weatherRecords *[]models.Weather, columnsConfig *configs.ColumnsConfig) ([]WeatherRecordResponse, error) {
 	var results []WeatherRecordResponse
 	for _, record := range *weatherRecords {
-		dateFormatted, err := time.Parse(time.RFC3339, record.RecordedAt)
+		// support for both date and datetimes
+		layout := columnsConfig.DateFormat
+		if strings.Contains(record.RecordedAt, "T") {
+			layout = time.RFC3339
+		}
+		dateFormatted, err := time.Parse(layout, record.RecordedAt)
 		if err != nil {
 			return nil, fmt.Errorf("error parsing date: %v", err)
 		}
@@ -60,7 +66,7 @@ func GetWeatherRecordsForSingleDay(from string) ([]WeatherRecordResponse, error)
 	var weatherRecords *[]models.Weather
 	db.Where("recorded_at = ?", from).Find(&weatherRecords)
 
-	return getFormattedWeatherRecordUnitss(weatherRecords, columnsConfig)
+	return getFormattedWeatherRecordUnits(weatherRecords, columnsConfig)
 }
 
 func GetWeatherRecordsForRange(from string, to string) ([]WeatherRecordResponse, error) {
@@ -70,7 +76,7 @@ func GetWeatherRecordsForRange(from string, to string) ([]WeatherRecordResponse,
 	var weatherRecords *[]models.Weather
 	db.Where("recorded_at >= ?", from).Where("recorded_at <= ?", to).Find(&weatherRecords)
 
-	return getFormattedWeatherRecordUnitss(weatherRecords, columnsConfig)
+	return getFormattedWeatherRecordUnits(weatherRecords, columnsConfig)
 }
 
 func CreateWeatherRecord(record *WeatherRecordBody) (WeatherRecordResponse, error) {
@@ -89,7 +95,7 @@ func CreateWeatherRecord(record *WeatherRecordBody) (WeatherRecordResponse, erro
 			return fmt.Errorf("error creating record: %v", err)
 		}
 
-		results, err := getFormattedWeatherRecordUnitss(&[]models.Weather{weatherRecord}, columnsConfig)
+		results, err := getFormattedWeatherRecordUnits(&[]models.Weather{weatherRecord}, columnsConfig)
 		if err != nil {
 			return fmt.Errorf("error formatting results: %v", err)
 		}
