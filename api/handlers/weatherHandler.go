@@ -65,6 +65,7 @@ func CreateWeatherRecord(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid request")
 	}
 
+	// Note: A validation library would simplify these checks
 	if !utils.IsValidDate(record.RecordedAt) {
 		log.Println("Invalid date format:", record.RecordedAt)
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid Request")

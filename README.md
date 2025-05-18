@@ -108,12 +108,16 @@ When using Postman, make sure to create a WebSocket request, not a Socket.IO req
 
 ## Running Tests
 
-Run both unit and integrations tests using:
+Run tests using:
 
 ```bash
 cd api
 APP_ENV=test go test ./...
 ```
+
+This covers two types of tests:
+- Integration tests (covering HTTP endpoints, including request validation and response verification)
+- Unit tests
 
 ---
 

@@ -11,7 +11,6 @@ import (
 )
 
 type Config struct {
-	Port               string
 	ApiToken           string
 	AppHost            string
 	DbConnectionString string
@@ -85,7 +84,6 @@ func Get() *Config {
 			AppHost:            os.Getenv("APP_HOST"),
 			DbConnectionString: os.Getenv("DB_CONNECTION_STRING"),
 		}
-		log.Println("Loading configuration...", conf)
 
 		if conf.ApiToken == "" {
 			log.Fatalln("API_TOKEN environment variable is not set")
