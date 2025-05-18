@@ -75,6 +75,11 @@ func CreateWeatherRecord(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid Request")
 	}
 
+	if record.Humidity < 0 || record.Humidity > 100 {
+		log.Println("Humidity out of range:", record.Humidity)
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid Request")
+	}
+
 	log.Println("Received request to create:", record)
 
 	// verify record is not already in the database

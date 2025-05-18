@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"weatherapi/configs"
 	"weatherapi/handlers"
 	"weatherapi/models"
 	"weatherapi/server"
@@ -14,6 +15,18 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
 )
+
+func TestConfigs(t *testing.T) {
+	configs := configs.Get()
+	assert.Contains(t, configs.DbConnectionString, "sqlite")
+}
+
+func TestColumnConfigs(t *testing.T) {
+	columns := configs.GetColumns()
+	assert.Equal(t, columns.DateFormat, "2006-01-02")
+	assert.Equal(t, columns.HumidityFormat, "%")
+	assert.Equal(t, columns.TemperatureFormat, "°C")
+}
 
 func TestPingRoute(t *testing.T) {
 	app := Setup()
@@ -53,6 +66,40 @@ func TestCreateWeatherRoute(t *testing.T) {
 		prepareTestDB()
 
 		requestBody := `{"date":"invalid date!","humidity":60.98765,"temperature":25.98765}`
+		req, _ := http.NewRequest("POST", "/weather", strings.NewReader(requestBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Api-Token", "abcdef")
+		res, err := app.Test(req, -1)
+
+		// Validate response
+		assert.Nil(t, err)
+		assert.Equal(t, 400, res.StatusCode)
+		body, _ := io.ReadAll(res.Body)
+
+		assert.Equal(t, "Invalid Request", string(body))
+	})
+
+	t.Run("weather creation endpoint fails when passing a humidity that is too high", func(t *testing.T) {
+		prepareTestDB()
+
+		requestBody := `{"date":"2025-01-01","humidity":160.98765,"temperature":25.98765}`
+		req, _ := http.NewRequest("POST", "/weather", strings.NewReader(requestBody))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("X-Api-Token", "abcdef")
+		res, err := app.Test(req, -1)
+
+		// Validate response
+		assert.Nil(t, err)
+		assert.Equal(t, 400, res.StatusCode)
+		body, _ := io.ReadAll(res.Body)
+
+		assert.Equal(t, "Invalid Request", string(body))
+	})
+
+	t.Run("weather creation endpoint fails when passing a humidity that is too low", func(t *testing.T) {
+		prepareTestDB()
+
+		requestBody := `{"date":"2025-01-01","humidity":-10.98765,"temperature":25.98765}`
 		req, _ := http.NewRequest("POST", "/weather", strings.NewReader(requestBody))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("X-Api-Token", "abcdef")

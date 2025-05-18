@@ -14,6 +14,9 @@ func TestDateValidity(t *testing.T) {
 	input = IsValidDate("2024-06-01")
 	assert.Equal(t, true, input)
 
+	input = IsValidDate("2024-06-01T01:00:00")
+	assert.Equal(t, false, input)
+
 	// Invalid date string
 	input = IsValidDate("not-a-date")
 	assert.Equal(t, false, input)

@@ -108,7 +108,7 @@ When using Postman, make sure to create a WebSocket request, not a Socket.IO req
 
 ## Running Tests
 
-Run all tests using:
+Run both unit and integrations tests using:
 
 ```bash
 cd api
@@ -129,7 +129,7 @@ APP_ENV=test go test ./...
 │   ├── services/        # Business logic and data access
 │   ├── utils/           # Utility functions (date, number formatting, etc.)
 │   ├── main.go          # Application entry point
-│   ├── main_test.go     # Main API tests
+│   ├── main_test.go     # API Integration tests
 │   ├── go.mod           # Go module definition
 │   └── go.sum           # Go module checksums
 ├── db/
